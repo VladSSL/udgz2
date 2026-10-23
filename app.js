@@ -20,6 +20,83 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   }), {threshold: .08, rootMargin: '0px 0px 18px 0px'});
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 }
+
+// Первый экран: масштаб установки и исчезновение подписей привязаны к прокрутке.
+(() => {
+  const stage = document.querySelector('.product-stage');
+  const product = stage?.querySelector('.hero-product');
+  if (!stage || !product) return;
+  const header = document.querySelector('.header');
+  const labels = [...stage.querySelectorAll('.stage-note, .stage-model')];
+  let start = 0;
+  let distance = 1;
+  let frame = 0;
+  let current = 0;
+  let previous = -1;
+  let measuring = true;
+  const clamp = value => Math.max(0, Math.min(1, value));
+
+  function measure() {
+    const top = stage.getBoundingClientRect().top + window.scrollY;
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    start = Math.max(0, top - window.innerHeight * .58);
+    distance = Math.max(180, top - headerHeight - 24 - start);
+    measuring = false;
+  }
+
+  function render() {
+    frame = 0;
+    if (reducedMotion.matches) return;
+    if (measuring) measure();
+    const target = clamp((window.scrollY - start) / distance);
+    current += (target - current) * .18;
+    if (Math.abs(target - current) < .0005) current = target;
+    const eased = current * current * (3 - 2 * current);
+    if (current !== previous) {
+      stage.style.setProperty('--hero-progress', eased.toFixed(5));
+      const fade = clamp(1 - eased / .72);
+      stage.style.setProperty('--hero-label-opacity', fade.toFixed(5));
+      labels.forEach(label => { label.inert = fade < .02; });
+      previous = current;
+    }
+    if (current !== target) frame = requestAnimationFrame(render);
+  }
+
+  function schedule() {
+    if (!frame && !reducedMotion.matches) frame = requestAnimationFrame(render);
+  }
+
+  function refresh() {
+    measuring = true;
+    schedule();
+  }
+
+  function updateMotion() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    stage.classList.toggle('hero-scroll-active', !reducedMotion.matches);
+    if (reducedMotion.matches) {
+      stage.style.removeProperty('--hero-progress');
+      stage.style.removeProperty('--hero-label-opacity');
+      labels.forEach(label => { label.inert = false; });
+      current = 0;
+      previous = -1;
+    } else {
+      measure();
+      current = clamp((window.scrollY - start) / distance);
+      previous = -1;
+      schedule();
+    }
+  }
+
+  window.addEventListener('scroll', schedule, {passive: true});
+  window.addEventListener('resize', refresh, {passive: true});
+  window.addEventListener('pageshow', refresh);
+  product.addEventListener('load', refresh, {once: true});
+  reducedMotion.addEventListener('change', updateMotion);
+  updateMotion();
+})();
+
 const videoStage = document.querySelector('#video-stage');
 const videoPoster = document.querySelector('#video-poster');
 const videoPlay = document.querySelector('#video-play');
