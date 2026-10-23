@@ -53,3 +53,27 @@
   .hero-scroll-active .stage-note,
   .hero-scroll-active .stage-model{opacity:1}
 }
+
+/* Характеристики: появление из-за края, затем один мягкий проход света. */
+.numbers{position:relative;isolation:isolate;overflow:hidden}
+.numbers>.wrap{position:relative;z-index:1}
+.metric-value-window{overflow:hidden}
+.numbers.metrics-pending .metric-value-window p{transform:translateY(110%)}
+.numbers.metrics-pending .metrics>div>span{opacity:0}
+.numbers::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:24%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);
+  opacity:0;pointer-events:none;z-index:0;
+}
+.numbers.metrics-lit::before{animation:metrics-light-sweep 1.05s linear .1s}
+@keyframes metrics-light-sweep{
+  0%{transform:translateX(-110%);opacity:0}
+  12%{opacity:.85}
+  88%{opacity:.85}
+  100%{transform:translateX(530%);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .numbers.metrics-pending .metric-value-window p{transform:none}
+  .numbers.metrics-pending .metrics>div>span{opacity:1}
+  .numbers.metrics-lit::before{animation:none;opacity:0}
+}

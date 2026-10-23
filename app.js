@@ -97,6 +97,68 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   updateMotion();
 })();
 
+// Характеристики: однократное раскрытие цифр, после него световой проход.
+(() => {
+  const section = document.querySelector('.numbers');
+  const metrics = section?.querySelector('.metrics');
+  if (!metrics || !('IntersectionObserver' in window) || typeof metrics.animate !== 'function') return;
+  const items = [...metrics.children];
+  let observer;
+  let played = false;
+  let animations = [];
+
+  function showFinal() {
+    section.classList.remove('metrics-pending', 'metrics-lit');
+    animations.forEach(animation => animation.cancel());
+    animations = [];
+  }
+
+  function play() {
+    if (played || reducedMotion.matches) return;
+    played = true;
+    observer.disconnect();
+    section.classList.remove('metrics-pending');
+    const easing = 'cubic-bezier(.22,1,.36,1)';
+    animations = items.flatMap((item, index) => {
+      const delay = index * 90;
+      return [
+        item.querySelector('.metric-value-window p').animate([
+          {transform:'translateY(110%)'}, {transform:'translateY(0)'}
+        ], {duration:680, delay, easing, fill:'backwards'}),
+        item.querySelector(':scope > span').animate([
+          {opacity:0}, {opacity:1}
+        ], {duration:400, delay:delay + 220, easing, fill:'backwards'})
+      ];
+    });
+    Promise.all(animations.map(animation => animation.finished)).then(() => {
+      animations = [];
+      if (reducedMotion.matches || document.hidden) return;
+      const rect = metrics.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < window.innerHeight) section.classList.add('metrics-lit');
+    }).catch(() => {});
+  }
+
+  function updateMotion() {
+    if (observer) observer.disconnect();
+    if (reducedMotion.matches) {
+      showFinal();
+      return;
+    }
+    if (played) return;
+    observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= .35)) play();
+    }, {threshold:.35});
+    section.classList.add('metrics-pending');
+    observer.observe(metrics);
+  }
+
+  reducedMotion.addEventListener('change', updateMotion);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && played) showFinal();
+  });
+  updateMotion();
+})();
+
 const videoStage = document.querySelector('#video-stage');
 const videoPoster = document.querySelector('#video-poster');
 const videoPlay = document.querySelector('#video-play');
