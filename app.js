@@ -179,23 +179,26 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
 })();
 
 
-// Фото применения: ручное переключение с загрузкой нового кадра до его показа.
+// Фото применения: стрелки по краям, переход по кругу и плавное появление кадра.
 (() => {
   const gallery = document.querySelector('.application-gallery');
   if (!gallery) return;
   const media = gallery.querySelector('.application-media');
   const photos = [...gallery.querySelectorAll('.application-photo')];
-  const buttons = [...gallery.querySelectorAll('[data-photo]')];
+  const previous = gallery.querySelector('.gallery-prev');
+  const next = gallery.querySelector('.gallery-next');
   const controls = gallery.querySelector('.gallery-controls');
   const status = gallery.querySelector('.gallery-status');
-  if (!media || !controls || !status || !photos.length || photos.length !== buttons.length) return;
+  if (!media || !controls || !status || !previous || !next || photos.length < 2) return;
   let active = 0;
+  let requested = 0;
   let request = 0;
   let fade;
 
   async function selectPhoto(index) {
-    if (!photos[index]) return;
+    index = (index + photos.length) % photos.length;
     const version = ++request;
+    requested = index;
     status.classList.add('sr-only');
     status.textContent = '';
     if (index === active) {
@@ -216,24 +219,27 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
       if (fade) fade.cancel();
       photos.forEach((image, i) => { image.hidden = i !== index; });
       active = index;
-      buttons.forEach((button, i) => {
-        button.classList.toggle('is-active', i === index);
-        button.setAttribute('aria-pressed', String(i === index));
-      });
       if (!reducedMotion.matches && typeof photo.animate === 'function') {
         fade = photo.animate([{opacity:0}, {opacity:1}], {duration:260, easing:'ease-out'});
       }
       status.textContent = 'Фото ' + (index + 1) + ' из ' + photos.length + '. ' + photo.alt;
     } catch (_) {
       if (version !== request) return;
+      requested = active;
       status.classList.remove('sr-only');
-      status.textContent = 'Не удалось загрузить фото. Попробуйте ещё раз или выберите другое.';
+      status.textContent = 'Не удалось загрузить фото. Попробуйте переключить ещё раз.';
     } finally {
       if (version === request) media.removeAttribute('aria-busy');
     }
   }
 
-  buttons.forEach(button => button.addEventListener('click', () => selectPhoto(Number(button.dataset.photo))));
+  previous.addEventListener('click', () => selectPhoto(requested - 1));
+  next.addEventListener('click', () => selectPhoto(requested + 1));
+  gallery.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    selectPhoto(requested + (event.key === 'ArrowLeft' ? -1 : 1));
+  });
   reducedMotion.addEventListener('change', () => { if (reducedMotion.matches && fade) fade.cancel(); });
   controls.hidden = false;
 })();
