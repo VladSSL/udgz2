@@ -99,28 +99,39 @@
   .model-card:hover .model-photo img{transform:none}
 }
 
-/* Прозрачная компактная панель: визуальное сжатие не сдвигает страницу. */
+/* Панель мягко сжимается, одновременно проявляя стекло. Место в потоке сохраняется. */
 .header{
   height:69px;--header-surface-scale:1;--header-shift:0px;
+  --header-motion:.4s;--header-ease:cubic-bezier(.22,.75,.25,1);
   background:transparent;border-bottom:0;backdrop-filter:none;-webkit-backdrop-filter:none;
   pointer-events:none;
 }
 .header::before{
   content:"";position:absolute;inset:0;pointer-events:none;
-  background:rgba(255,255,255,.9);border-bottom:1px solid rgba(29,29,31,.08);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:rgba(255,255,255,.9);border-bottom:1px solid rgba(29,29,31,.04);
+  backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);
   transform-origin:50% 0;transform:scaleY(var(--header-surface-scale));
-  transition:transform .34s cubic-bezier(.22,1,.36,1),background .28s ease;
+  transition:transform var(--header-motion) var(--header-ease),
+    background-color var(--header-motion) ease,
+    border-color var(--header-motion) ease,
+    backdrop-filter var(--header-motion) ease,
+    -webkit-backdrop-filter var(--header-motion) ease;
 }
 .header .nav{
   position:relative;z-index:1;transform:translateY(var(--header-shift));
-  transition:transform .34s cubic-bezier(.22,1,.36,1);
+  transition:transform var(--header-motion) var(--header-ease);
+}
+.header .nav>.button{
+  transition:min-height var(--header-motion) var(--header-ease),background .2s,transform .2s;
 }
 .header a{pointer-events:auto}
 .header.is-compact{--header-surface-scale:calc(39 / 69);--header-shift:-14.5px}
-.header.is-compact::before{background:rgba(255,255,255,.75)}
+.header.is-compact::before{
+  background:rgba(255,255,255,.75);border-bottom-color:rgba(29,29,31,.08);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
 @media(max-width:760px){
-  .header{height:62px}
+  .header{height:62px;--header-motion:.32s}
   .header.is-compact{--header-surface-scale:calc(39 / 62);--header-shift:-11px}
   .header .nav>.button{min-height:44px}
   .header.is-compact .nav>.button{min-height:34px}
@@ -130,7 +141,7 @@
 .header.is-compact .nav>.button::after{content:"";position:absolute;inset:0 0 -10px}
 .header.is-compact .nav>.button:hover{transform:none}
 @media(prefers-reduced-motion:reduce){
-  .header::before,.header .nav{transition:none}
+  .header::before,.header .nav,.header .nav>.button{transition:none}
 }
 
 /* Галерея: стрелки под фотографией в стиле управления видео. */
