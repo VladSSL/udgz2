@@ -414,7 +414,6 @@ function setVideoState() {
   videoPause.querySelector('.transport-play').toggleAttribute('hidden', !!item.playing);
   videoPause.querySelector('.transport-pause').toggleAttribute('hidden', !item.playing);
   const silent = (item.muted ?? true) || item.volume === 0;
-  videoSound.querySelector('span').textContent = silent ? 'Звук выкл.' : 'Звук вкл.';
   videoSound.setAttribute('aria-pressed', String(!silent));
   videoSound.querySelector('.sound-waves').toggleAttribute('hidden', silent);
   videoSound.querySelector('.sound-cross').toggleAttribute('hidden', !silent);
