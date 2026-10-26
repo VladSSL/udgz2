@@ -178,6 +178,66 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   updateMotion();
 })();
 
+
+// Фото применения: ручное переключение с загрузкой нового кадра до его показа.
+(() => {
+  const gallery = document.querySelector('.application-gallery');
+  if (!gallery) return;
+  const media = gallery.querySelector('.application-media');
+  const photos = [...gallery.querySelectorAll('.application-photo')];
+  const buttons = [...gallery.querySelectorAll('[data-photo]')];
+  const controls = gallery.querySelector('.gallery-controls');
+  const status = gallery.querySelector('.gallery-status');
+  if (!media || !controls || !status || !photos.length || photos.length !== buttons.length) return;
+  let active = 0;
+  let request = 0;
+  let fade;
+
+  async function selectPhoto(index) {
+    if (!photos[index]) return;
+    const version = ++request;
+    status.classList.add('sr-only');
+    status.textContent = '';
+    if (index === active) {
+      media.removeAttribute('aria-busy');
+      return;
+    }
+    media.setAttribute('aria-busy', 'true');
+    const photo = photos[index];
+    try {
+      photo.loading = 'eager';
+      if (typeof photo.decode === 'function') await photo.decode();
+      else if (!photo.complete) await new Promise((resolve, reject) => {
+        photo.addEventListener('load', resolve, {once:true});
+        photo.addEventListener('error', reject, {once:true});
+      });
+      if (!photo.naturalWidth) throw new Error('Photo unavailable');
+      if (version !== request) return;
+      if (fade) fade.cancel();
+      photos.forEach((image, i) => { image.hidden = i !== index; });
+      active = index;
+      buttons.forEach((button, i) => {
+        button.classList.toggle('is-active', i === index);
+        button.setAttribute('aria-pressed', String(i === index));
+      });
+      if (!reducedMotion.matches && typeof photo.animate === 'function') {
+        fade = photo.animate([{opacity:0}, {opacity:1}], {duration:260, easing:'ease-out'});
+      }
+      status.textContent = 'Фото ' + (index + 1) + ' из ' + photos.length + '. ' + photo.alt;
+    } catch (_) {
+      if (version !== request) return;
+      status.classList.remove('sr-only');
+      status.textContent = 'Не удалось загрузить фото. Попробуйте ещё раз или выберите другое.';
+    } finally {
+      if (version === request) media.removeAttribute('aria-busy');
+    }
+  }
+
+  buttons.forEach(button => button.addEventListener('click', () => selectPhoto(Number(button.dataset.photo))));
+  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches && fade) fade.cancel(); });
+  controls.hidden = false;
+})();
+
 const videoStage = document.querySelector('#video-stage');
 const videoPoster = document.querySelector('#video-poster');
 const videoPlay = document.querySelector('#video-play');

@@ -130,3 +130,15 @@
 @media(prefers-reduced-motion:reduce){
   .header::before,.header .nav{transition:none}
 }
+
+/* Галерея применения: те же кнопки и оттенки, что у управления видео. */
+.application-gallery{min-width:0;background:#fff;border-radius:28px;overflow:hidden}
+.application-gallery .application-media{height:420px;min-height:0;max-height:none;border-radius:0}
+.application-gallery .application-photo{height:100%}
+.gallery-controls{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
+.gallery-status:not(.sr-only){margin:0;padding:0 16px 16px;font-size:13px;color:var(--muted)}
+@media(max-width:1050px){.application-gallery .application-media{height:350px}}
+@media(max-width:760px){
+  .application-gallery .application-media{height:330px}
+  .gallery-controls .photo-choice{padding-inline:9px;font-size:12px}
+}
