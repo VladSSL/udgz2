@@ -96,3 +96,35 @@
   .model-photo img{transition:none!important}
   .model-card:hover .model-photo img{transform:none}
 }
+
+/* Прозрачная компактная панель: визуальное сжатие не сдвигает страницу. */
+.header{
+  height:69px;--header-surface-scale:1;--header-shift:0px;
+  background:transparent;border-bottom:0;backdrop-filter:none;-webkit-backdrop-filter:none;
+  pointer-events:none;
+}
+.header::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:rgba(255,255,255,.9);border-bottom:1px solid rgba(29,29,31,.08);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  transform-origin:50% 0;transform:scaleY(var(--header-surface-scale));
+  transition:transform .34s cubic-bezier(.22,1,.36,1),background .28s ease;
+}
+.header .nav{
+  position:relative;z-index:1;transform:translateY(var(--header-shift));
+  transition:transform .34s cubic-bezier(.22,1,.36,1);
+}
+.header a{pointer-events:auto}
+.header.is-compact{--header-surface-scale:.8;--header-shift:-7px}
+.header.is-compact::before{background:rgba(255,255,255,.76)}
+@media(max-width:760px){
+  .header{height:62px}
+  .header.is-compact{--header-surface-scale:.9;--header-shift:-3px}
+  .header .nav>.button{min-height:44px}
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .header.is-compact::before{background:rgba(255,255,255,.96)}
+}
+@media(prefers-reduced-motion:reduce){
+  .header::before,.header .nav{transition:none}
+}

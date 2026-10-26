@@ -3,6 +3,37 @@
 const METRIKA_ID = '';
 const CONTACT_EMAIL = 'info@rusplasma.com';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Компактная панель включается после первого экрана; место под ней остаётся постоянным.
+(() => {
+  const header = document.querySelector('.header');
+  const hero = document.querySelector('.hero');
+  if (!header || !hero) return;
+  let threshold = 0;
+  let frame = 0;
+
+  function update() {
+    frame = 0;
+    header.classList.toggle('is-compact', window.scrollY > threshold);
+  }
+  function measure() {
+    threshold = Math.max(0, hero.getBoundingClientRect().bottom + window.scrollY - header.offsetHeight);
+    update();
+  }
+  function schedule() {
+    if (!frame) frame = requestAnimationFrame(update);
+  }
+  window.addEventListener('scroll', schedule, {passive:true});
+  window.addEventListener('resize', measure, {passive:true});
+  window.addEventListener('pageshow', measure);
+  if ('ResizeObserver' in window) {
+    const observer = new ResizeObserver(measure);
+    observer.observe(hero);
+    observer.observe(header);
+  }
+  measure();
+})();
+
 const track = (goal, params = {}) => {
   if (METRIKA_ID && typeof window.ym === 'function') window.ym(Number(METRIKA_ID), 'reachGoal', goal, params);
 };
