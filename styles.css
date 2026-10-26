@@ -151,11 +151,17 @@
 }
 @media(prefers-reduced-motion:reduce){.gallery-arrow{transition:none}}
 
-/* При прокрутке увеличиваются только цифры. Подписи и единицы сохраняют размер. */
+/* Цифры увеличиваются на 20%, после них все три подписи одновременно на 10%. */
 .metrics p .metric-digits{
   display:inline-block;font:inherit;letter-spacing:inherit;
   transform-origin:50% 65%;
-  transform:scale(calc(1 + var(--metric-zoom-progress,0) * .15));
+  transform:scale(calc(1 + var(--metric-zoom-progress,0) * .2));
+}
+.metrics>div>span{
+  transform-origin:50% 50%;
+  transform:scale(calc(1 + var(--metric-caption-progress,0) * .1));
 }
 .numbers.metrics-unmasked .metric-value-window{overflow:visible}
-@media(prefers-reduced-motion:reduce){.metrics p .metric-digits{transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .metrics p .metric-digits,.metrics>div>span{transform:none}
+}

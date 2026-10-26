@@ -197,7 +197,7 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
 })();
 
 
-// Числа увеличиваются до 115% только после раскрытия блока и светового прохода.
+// После появления и света: числа до 120%, затем все подписи одновременно до 110%.
 (() => {
   const section = document.querySelector('.numbers');
   const metrics = section?.querySelector('.metrics');
@@ -207,6 +207,7 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   let start = 0;
   let distance = 1;
   let current = 0;
+  let captionCurrent = 0;
   let frame = 0;
   let measuring = true;
   const clamp = value => Math.max(0, Math.min(1, value));
@@ -224,7 +225,11 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
     current += (target - current) * .12;
     if (Math.abs(target - current) < .0005) current = target;
     section.style.setProperty('--metric-zoom-progress', current.toFixed(5));
-    if (current !== target) frame = requestAnimationFrame(render);
+    const captionTarget = current === 1 && target === 1 ? 1 : 0;
+    captionCurrent += (captionTarget - captionCurrent) * .12;
+    if (Math.abs(captionTarget - captionCurrent) < .0005) captionCurrent = captionTarget;
+    section.style.setProperty('--metric-caption-progress', captionCurrent.toFixed(5));
+    if (current !== target || captionCurrent !== captionTarget) frame = requestAnimationFrame(render);
   }
   function schedule() {
     if (!frame && ready && !reducedMotion.matches) frame = requestAnimationFrame(render);
@@ -237,7 +242,9 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
     cancelAnimationFrame(frame);
     frame = 0;
     current = 0;
+    captionCurrent = 0;
     section.style.removeProperty('--metric-zoom-progress');
+    section.style.removeProperty('--metric-caption-progress');
   }
   section.addEventListener('metrics-intro-start', () => { ready = false; reset(); });
   section.addEventListener('metrics-intro-finished', () => { ready = true; refresh(); });
