@@ -116,7 +116,7 @@
 }
 .header a{pointer-events:auto}
 .header.is-compact{--header-surface-scale:calc(39 / 69);--header-shift:-14.5px}
-.header.is-compact::before{background:rgba(255,255,255,.65)}
+.header.is-compact::before{background:rgba(255,255,255,.75)}
 @media(max-width:760px){
   .header{height:62px}
   .header.is-compact{--header-surface-scale:calc(39 / 62);--header-shift:-11px}
