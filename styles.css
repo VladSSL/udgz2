@@ -115,15 +115,15 @@
   transition:transform .34s cubic-bezier(.22,1,.36,1);
 }
 .header a{pointer-events:auto}
-.header.is-compact{--header-surface-scale:calc(35 / 69);--header-shift:-16.5px}
+.header.is-compact{--header-surface-scale:calc(39 / 69);--header-shift:-14.5px}
 .header.is-compact::before{background:rgba(255,255,255,.65)}
 @media(max-width:760px){
   .header{height:62px}
-  .header.is-compact{--header-surface-scale:calc(35 / 62);--header-shift:-13px}
+  .header.is-compact{--header-surface-scale:calc(39 / 62);--header-shift:-11px}
   .header .nav>.button{min-height:44px}
   .header.is-compact .nav>.button{min-height:34px}
 }
-/* Зона нажатия CTA остаётся 44 px при видимой панели высотой 35 px. */
+/* Зона нажатия CTA остаётся 44 px при видимой панели высотой 39 px. */
 .header.is-compact .nav>.button{position:relative}
 .header.is-compact .nav>.button::after{content:"";position:absolute;inset:0 0 -10px}
 .header.is-compact .nav>.button:hover{transform:none}
