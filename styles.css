@@ -150,3 +150,12 @@
   .gallery-arrow{min-height:44px}
 }
 @media(prefers-reduced-motion:reduce){.gallery-arrow{transition:none}}
+
+/* При прокрутке увеличиваются только цифры. Подписи и единицы сохраняют размер. */
+.metrics p .metric-digits{
+  display:inline-block;font:inherit;letter-spacing:inherit;
+  transform-origin:50% 65%;
+  transform:scale(calc(1 + var(--metric-zoom-progress,0) * .15));
+}
+.numbers.metrics-unmasked .metric-value-window{overflow:visible}
+@media(prefers-reduced-motion:reduce){.metrics p .metric-digits{transform:none}}

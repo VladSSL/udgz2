@@ -126,10 +126,24 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   let played = false;
   let animations = [];
 
+  function finishIntro() {
+    if (section.classList.contains('metrics-intro-complete')) return;
+    section.classList.add('metrics-intro-complete', 'metrics-unmasked');
+    section.dispatchEvent(new Event('metrics-intro-finished'));
+  }
+
+  section.addEventListener('animationend', event => {
+    if (event.animationName === 'metrics-light-sweep') finishIntro();
+  });
+  section.addEventListener('animationcancel', event => {
+    if (event.animationName === 'metrics-light-sweep') finishIntro();
+  });
+
   function showFinal() {
     section.classList.remove('metrics-pending', 'metrics-lit');
     animations.forEach(animation => animation.cancel());
     animations = [];
+    finishIntro();
   }
 
   function play() {
@@ -151,9 +165,11 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
     });
     Promise.all(animations.map(animation => animation.finished)).then(() => {
       animations = [];
-      if (reducedMotion.matches || document.hidden) return;
+      section.classList.add('metrics-unmasked');
+      if (reducedMotion.matches || document.hidden) { finishIntro(); return; }
       const rect = metrics.getBoundingClientRect();
       if (rect.bottom > 0 && rect.top < window.innerHeight) section.classList.add('metrics-lit');
+      else finishIntro();
     }).catch(() => {});
   }
 
@@ -164,6 +180,8 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
       return;
     }
     if (played) return;
+    section.classList.remove('metrics-unmasked', 'metrics-intro-complete');
+    section.dispatchEvent(new Event('metrics-intro-start'));
     observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= .35)) play();
     }, {threshold:.35});
@@ -178,6 +196,58 @@ if ('IntersectionObserver' in window && !reducedMotion.matches) {
   updateMotion();
 })();
 
+
+// Числа увеличиваются до 115% только после раскрытия блока и светового прохода.
+(() => {
+  const section = document.querySelector('.numbers');
+  const metrics = section?.querySelector('.metrics');
+  if (!metrics) return;
+  let ready = section.classList.contains('metrics-intro-complete') ||
+    !('IntersectionObserver' in window) || typeof metrics.animate !== 'function';
+  let start = 0;
+  let distance = 1;
+  let current = 0;
+  let frame = 0;
+  let measuring = true;
+  const clamp = value => Math.max(0, Math.min(1, value));
+
+  function render() {
+    frame = 0;
+    if (!ready || reducedMotion.matches) return;
+    if (measuring) {
+      const top = metrics.getBoundingClientRect().top + window.scrollY;
+      start = Math.max(0, top - window.innerHeight * .85);
+      distance = Math.max(160, window.innerHeight * .4);
+      measuring = false;
+    }
+    const target = clamp((window.scrollY - start) / distance);
+    current += (target - current) * .12;
+    if (Math.abs(target - current) < .0005) current = target;
+    section.style.setProperty('--metric-zoom-progress', current.toFixed(5));
+    if (current !== target) frame = requestAnimationFrame(render);
+  }
+  function schedule() {
+    if (!frame && ready && !reducedMotion.matches) frame = requestAnimationFrame(render);
+  }
+  function refresh() {
+    measuring = true;
+    schedule();
+  }
+  function reset() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    current = 0;
+    section.style.removeProperty('--metric-zoom-progress');
+  }
+  section.addEventListener('metrics-intro-start', () => { ready = false; reset(); });
+  section.addEventListener('metrics-intro-finished', () => { ready = true; refresh(); });
+  window.addEventListener('scroll', schedule, {passive:true});
+  window.addEventListener('resize', refresh, {passive:true});
+  window.addEventListener('pageshow', refresh);
+  reducedMotion.addEventListener('change', () => { reset(); refresh(); });
+  if (document.fonts) document.fonts.ready.then(refresh);
+  schedule();
+})();
 
 // Фото применения: стрелки по краям, переход по кругу и плавное появление кадра.
 (() => {
