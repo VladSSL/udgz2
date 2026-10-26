@@ -115,16 +115,18 @@
   transition:transform .34s cubic-bezier(.22,1,.36,1);
 }
 .header a{pointer-events:auto}
-.header.is-compact{--header-surface-scale:.8;--header-shift:-7px}
-.header.is-compact::before{background:rgba(255,255,255,.76)}
+.header.is-compact{--header-surface-scale:calc(35 / 69);--header-shift:-16.5px}
+.header.is-compact::before{background:rgba(255,255,255,.65)}
 @media(max-width:760px){
   .header{height:62px}
-  .header.is-compact{--header-surface-scale:.9;--header-shift:-3px}
+  .header.is-compact{--header-surface-scale:calc(35 / 62);--header-shift:-13px}
   .header .nav>.button{min-height:44px}
+  .header.is-compact .nav>.button{min-height:34px}
 }
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .header.is-compact::before{background:rgba(255,255,255,.96)}
-}
+/* Зона нажатия CTA остаётся 44 px при видимой панели высотой 35 px. */
+.header.is-compact .nav>.button{position:relative}
+.header.is-compact .nav>.button::after{content:"";position:absolute;inset:0 0 -10px}
+.header.is-compact .nav>.button:hover{transform:none}
 @media(prefers-reduced-motion:reduce){
   .header::before,.header .nav{transition:none}
 }
