@@ -325,6 +325,7 @@ const videoStage = document.querySelector('#video-stage');
 const videoPoster = document.querySelector('#video-poster');
 const videoPlay = document.querySelector('#video-play');
 const videoPause = document.querySelector('#video-pause');
+const videoSound = document.querySelector('#video-sound');
 const videoStatus = document.querySelector('#video-status');
 const kineHost = document.querySelector('#kinescope-host');
 const choices = [...document.querySelectorAll('[data-video]')];
@@ -412,6 +413,12 @@ function setVideoState() {
   videoPause.querySelector('span').textContent = item.playing ? 'Пауза' : 'Плей';
   videoPause.querySelector('.transport-play').toggleAttribute('hidden', !!item.playing);
   videoPause.querySelector('.transport-pause').toggleAttribute('hidden', !item.playing);
+  const silent = (item.muted ?? true) || item.volume === 0;
+  videoSound.querySelector('span').textContent = silent ? 'Звук выкл.' : 'Звук вкл.';
+  videoSound.setAttribute('aria-pressed', String(!silent));
+  videoSound.querySelector('.sound-waves').toggleAttribute('hidden', silent);
+  videoSound.querySelector('.sound-cross').toggleAttribute('hidden', !silent);
+  videoSound.disabled = !!item.soundBusy;
   videoCaption.innerHTML = originalVideoCaption;
   videoPlay.removeAttribute('aria-busy');
 }
@@ -434,11 +441,16 @@ function loadKinescope(key) {
   item.promise = loadKinescopeFactory().then(factory => factory.create(item.id, {
     url: item.url,
     size: {width:'100%', height:'100%'},
-    behavior: {autoPlay:false, muted:true, playsInline:true, localStorage:{time:false}},
+    behavior: {autoPlay:false, muted:item.muted ?? true, playsInline:true, localStorage:{time:false}},
     ui: {language:'ru', controls:true, mainPlayButton:true}
   })).then(player => {
     item.player = player;
     item.ready = true;
+    player.on(player.Events.VolumeChange, event => {
+      item.muted = event.data.muted;
+      item.volume = event.data.volume;
+      if (selectedVideo === key) setVideoState();
+    });
     player.on(player.Events.Playing, () => {
       if (selectedVideo !== key || document.hidden) {
         player.pause().catch(() => {});
@@ -460,6 +472,33 @@ function loadKinescope(key) {
     return player;
   }).catch(error => { item.promise = null; throw error; });
   return item.promise;
+}
+async function toggleVideoSound() {
+  const selected = selectedVideo;
+  const item = kineVideos[selected];
+  if (item.soundBusy) return;
+  const previousMuted = item.muted ?? true;
+  const previousVolume = item.volume;
+  const silent = previousMuted || previousVolume === 0;
+  item.muted = !silent;
+  if (silent && item.volume === 0) item.volume = 1;
+  if (!item.player) { setVideoState(); return; }
+  item.soundBusy = true;
+  setVideoState();
+  try {
+    if (silent) {
+      if (previousVolume === 0) await item.player.setVolume(1);
+      await item.player.unmute();
+    } else await item.player.mute();
+    [item.muted, item.volume] = await Promise.all([item.player.isMuted(), item.player.getVolume()]);
+  } catch (_) {
+    item.muted = previousMuted;
+    item.volume = previousVolume;
+    if (selectedVideo === selected) showVideoStatus('Не удалось переключить звук. Попробуйте ещё раз.');
+  } finally {
+    item.soundBusy = false;
+    if (selectedVideo === selected) setVideoState();
+  }
 }
 function pauseVideo() {
   requestVersion += 1;
@@ -510,6 +549,7 @@ async function selectVideo(button) {
   }
   if (resetVersion === requestVersion && selectedVideo === next) playVideo();
 }
+videoSound.addEventListener('click', toggleVideoSound);
 videoPlay.addEventListener('click', playVideo);
 choices.forEach(button => button.addEventListener('click', () => selectVideo(button)));
 setVideoState();
