@@ -166,6 +166,57 @@ const videoPause = document.querySelector('#video-pause');
 const videoStatus = document.querySelector('#video-status');
 const kineHost = document.querySelector('#kinescope-host');
 const choices = [...document.querySelectorAll('[data-video]')];
+
+// Общая плашка перемещается между кнопками, сохраняя текущую позицию при быстрых кликах.
+const moveVideoHighlight = (() => {
+  const group = document.querySelector('.video-choices');
+  if (!group || !choices.length) return () => {};
+  const highlight = document.createElement('span');
+  highlight.className = 'video-choice-highlight';
+  highlight.setAttribute('aria-hidden', 'true');
+  group.prepend(highlight);
+  let animation;
+  let positioned = false;
+  let resizeFrame = 0;
+
+  function place(animate = true) {
+    const selected = group.querySelector('.video-choice.is-active');
+    if (!selected) return;
+    const groupRect = group.getBoundingClientRect();
+    const target = selected.getBoundingClientRect();
+    if (!target.width || !target.height) return;
+    const previous = positioned ? highlight.getBoundingClientRect() : target;
+    if (animation) animation.cancel();
+    const x = target.left - groupRect.left;
+    const y = target.top - groupRect.top;
+    highlight.style.width = target.width + 'px';
+    highlight.style.height = target.height + 'px';
+    highlight.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+    group.classList.add('has-highlight');
+    if (positioned && animate && !reducedMotion.matches && typeof highlight.animate === 'function') {
+      animation = highlight.animate([
+        {transform:'translate3d(' + (previous.left - groupRect.left) + 'px,' + (previous.top - groupRect.top) + 'px,0) scale(' + (previous.width / target.width) + ',' + (previous.height / target.height) + ')'},
+        {transform:'translate3d(' + x + 'px,' + y + 'px,0) scale(1,1)'}
+      ], {duration:360, easing:'cubic-bezier(.22,1,.36,1)'});
+    }
+    positioned = true;
+  }
+
+  function resize() {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => place(false));
+  }
+  if ('ResizeObserver' in window) {
+    const observer = new ResizeObserver(resize);
+    observer.observe(group);
+    choices.forEach(button => observer.observe(button));
+  } else window.addEventListener('resize', resize, {passive:true});
+  reducedMotion.addEventListener('change', () => place(false));
+  if (document.fonts) document.fonts.ready.then(() => place(false));
+  place(false);
+  return place;
+})();
+
 const kineVideos = {
   overview: {url:'https://kinescope.io/gss5DCzriQ7JBjnw2tHGsA', title:'Как это работает', ratio:'1680 / 720', id:'kinescope-overview-player', host:document.querySelector('#kinescope-overview-host')},
   kinescope: {url:'https://kinescope.io/wsmPVtdpqGDFfAa5udezeL', title:'Реальная закалка', ratio:'16 / 9', id:'kinescope-player', host:document.querySelector('#kinescope-hardening-host')},
@@ -281,6 +332,7 @@ async function selectVideo(button) {
     choice.classList.toggle('is-active', active);
     choice.setAttribute('aria-pressed', String(active));
   });
+  moveVideoHighlight();
   kineHost.hidden = false;
   Object.entries(kineVideos).forEach(([key,item]) => { item.host.hidden = key !== next; });
   videoStage.style.setProperty('--video-ratio', kineVideos[next].ratio);

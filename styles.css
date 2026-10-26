@@ -77,3 +77,22 @@
   .numbers.metrics-pending .metrics>div>span{opacity:1}
   .numbers.metrics-lit::before{animation:none;opacity:0}
 }
+
+/* Подвижная подсветка видео находится между фоном кнопок и их надписями. */
+.video-choices{position:relative;isolation:isolate}
+.video-choice{position:relative}
+.video-choice-label{position:relative;z-index:2}
+.video-choice-highlight{
+  position:absolute;left:0;top:0;z-index:1;pointer-events:none;
+  border-radius:999px;background:rgb(229,229,234);transform-origin:0 0;
+}
+.video-choices.has-highlight .video-choice.is-active{background:var(--mist)}
+@media(hover:hover) and (pointer:fine){
+  .model-photo img{transition:transform .38s cubic-bezier(.22,1,.36,1);transform-origin:50% 60%}
+  .model-card:hover .model-photo img{transform:scale(1.03)}
+  .model-card:hover>.button{background:#0077ed}
+}
+@media(prefers-reduced-motion:reduce){
+  .model-photo img{transition:none!important}
+  .model-card:hover .model-photo img{transform:none}
+}
