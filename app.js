@@ -407,7 +407,11 @@ function setVideoState() {
   const item = kineVideos[selectedVideo];
   videoPoster.hidden = selectedVideo !== 'overview' || !!item.ready;
   videoPlay.hidden = selectedVideo !== 'overview' || !!item.ready;
-  videoPause.hidden = !item.playing;
+  videoPause.hidden = false;
+  videoPause.setAttribute('aria-label', item.playing ? 'Приостановить видео' : 'Воспроизвести видео');
+  videoPause.querySelector('span').textContent = item.playing ? 'Пауза' : 'Плей';
+  videoPause.querySelector('.transport-play').hidden = !!item.playing;
+  videoPause.querySelector('.transport-pause').hidden = !item.playing;
   videoCaption.innerHTML = originalVideoCaption;
   videoPlay.removeAttribute('aria-busy');
 }
@@ -508,7 +512,11 @@ async function selectVideo(button) {
 }
 videoPlay.addEventListener('click', playVideo);
 choices.forEach(button => button.addEventListener('click', () => selectVideo(button)));
-videoPause.addEventListener('click', pauseVideo);
+setVideoState();
+videoPause.addEventListener('click', () => {
+  if (kineVideos[selectedVideo].playing) pauseVideo();
+  else playVideo();
+});
 document.querySelector('.watch-link').addEventListener('click', () => {
   playWhenVisible = true;
   const box = videoStage.getBoundingClientRect();
